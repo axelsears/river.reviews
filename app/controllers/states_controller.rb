@@ -1,7 +1,7 @@
 class StatesController < ApplicationController
 
   def index
-    @states = State.list_all
+    @states = State.all
     render json: @states
   end
 

@@ -5,10 +5,10 @@ Rails.application.routes.draw do
 
    #resources :states #, :defaults => { :format => 'json' } #only: [:index, :new, :create, :edit, :update], constraints: lambda { |req| req.format == :json },
 
-   get 'state/:abbreviation', to: 'states#show'
+   get 'state/:state_abbreviation', to: 'municipalities#index'
    get 'states', to: 'states#index'
 
-   get 'waterways/:state', to: 'waterways#index'
+  #  get 'waterways/:state', to: 'waterways#index'
 
    root to: 'states#index'
 
