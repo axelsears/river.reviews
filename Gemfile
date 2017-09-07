@@ -28,6 +28,7 @@ gem 'simple_command'
 gem 'httparty'
 
 gem 'geocoder'
+gem 'area'
 
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
