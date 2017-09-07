@@ -37,7 +37,8 @@ class State < ApplicationRecord
   # end
 
   def self.seed_municipalities
-      last_record = Municipality.order('created_at DESC').first.state['id'].to_i + 1
+      # last_record = Municipality.order('created_at DESC').first.state['id'].to_i + 1
+      last_record = 1
       @states = State.where(:id => last_record..51)
       base_uri = "https://waterservices.usgs.gov/nwis/iv/?format=json&siteStatus=active&siteType=ST&stateCd="
 
@@ -78,7 +79,7 @@ class State < ApplicationRecord
              name ||= "#{zone}".to_region(:city => true)
              if name.nil?
                Geocoder.search(zone).each{|q| name ||= q.city }
-             ends
+             end
           end
 
 
@@ -155,6 +156,7 @@ class State < ApplicationRecord
             # puts municipality.as_json
           end
           municipalities.push(municipality)
+          municipality.save
 
           # sleep 1
         # municipalities.uniq!{|obj| obj.zone }  #
