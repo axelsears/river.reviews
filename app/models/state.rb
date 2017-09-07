@@ -37,13 +37,13 @@ class State < ApplicationRecord
   # end
 
   def self.seed_municipalities
-
-      @states = State.all
+      last_record = Municipality.order('created_at DESC').first.state['id'].to_i + 1
+      @states = State.where(:id => last_record..51)
       base_uri = "https://waterservices.usgs.gov/nwis/iv/?format=json&siteStatus=active&siteType=ST&stateCd="
 
       @states.each do |state|
         # next if state.id == 1
-        # next if state.id == 2
+        # next if state.id == (1,2,3,4,5)
         puts state.name
         # @municipalities = state.municipalities
         municipalities = Array.new
@@ -74,14 +74,13 @@ class State < ApplicationRecord
           if zone.nil?
              Geocoder.search("#{latitude},#{longitude}").each{|q| name ||= q.name }
              zone = "#{name}".to_zip.first unless name.nil?
-          end
-
-          unless zone.nil?
+           else
              name ||= "#{zone}".to_region(:city => true)
              if name.nil?
                Geocoder.search(zone).each{|q| name ||= q.city }
-             end
+             ends
           end
+
 
 
 
@@ -115,7 +114,7 @@ class State < ApplicationRecord
           # name ||= "#{query.postal_code}".to_region(:city => true) #=> "Brooklyn"
 
           # next if state.municipalities.find_by_zone(postal_code).present?
-
+          next if municipalities.map{|m| m.zone}.include? zone
           municipality = state.municipalities.new({
             name: name,
             zone: zone
@@ -123,12 +122,36 @@ class State < ApplicationRecord
 
           if municipality.zone.blank? && municipality.name.blank?
             next
+            open('myfile.out', 'a') { |f|
+              f.puts "-----     Skipping     -----"
+              f.puts "#{x['sourceInfo']['siteName']}"
+              f.puts "#{latitude},#{longitude}"
+              f.puts "#{x['sourceInfo']['siteCode'][0]['value']}"
+              f.puts "-----                  -----"
+              f.puts " "
+            }
           elsif municipality.zone.blank?
-            puts "#{municipality.name} has no zone"
+            open('myfile.out', 'a') { |f|
+              f.puts "-----     no zone     -----"
+              f.puts "#{municipality.name}"
+              f.puts "#{x['sourceInfo']['siteName']}"
+              f.puts "#{latitude},#{longitude}"
+              f.puts "#{x['sourceInfo']['siteCode'][0]['value']}"
+              f.puts "-----                 -----"
+              f.puts " "
+            }
           elsif municipality.name.blank?
-            puts "#{municipality.zone} has no name"
+            open('myfile.out', 'a') { |f|
+              f.puts "-----     no name     -----"
+              f.puts "#{municipality.zone}"
+              f.puts "#{x['sourceInfo']['siteName']}"
+              f.puts "#{latitude},#{longitude}"
+              f.puts "#{x['sourceInfo']['siteCode'][0]['value']}"
+              f.puts "-----                 -----"
+              f.puts " "
+            }
           else
-            puts [name,zone].join("   |   ")
+            puts [zone,name].join("     |     ")
             # puts municipality.as_json
           end
           municipalities.push(municipality)
@@ -157,9 +180,9 @@ class State < ApplicationRecord
           # puts waterway.as_json
         }
 
-        municipalities.uniq!{|obj| obj.zone }.each{ |m|
-          m.save
-        }
+        # municipalities.each{ |m|
+        #   m.save
+        # }
 
 
         # waterways = waterways.uniq!{|obj| obj.site_id }
