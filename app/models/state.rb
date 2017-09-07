@@ -8,6 +8,34 @@ class State < ApplicationRecord
   require 'json'
   include HTTParty
 
+  def self.repair_children
+    @states = State.all
+    @states.each { |state|
+      puts state.name
+      names_with_multiple = state.municipalities.group(:name).having("count(name) > 1").count.keys
+      zones_with_multiple = state.municipalities.group(:zone).having("count(zone) > 1").count.keys
+      state.municipalities.where(zone: zones_with_multiple).map{|i|
+        puts i.as_json
+      }
+      # municipalities = state.municipalities.where(zone: nil)
+      # municipalities = state.municipalities.select(:name,:zone).group(:name,:zone).having("count(*) > 1")
+      # municipalities.each { |municipality|
+      #
+      #   # matching = state.municipalities.where(name: municipality.name, zone: present?)
+      #   puts municipality.as_json
+      #   # puts matching.as_json
+      #   # puts ' '
+      #     # query = Geocoder.search([municipality.name, state.abbreviation].join(", ")).first
+      #     # puts query.as_json
+      #     # puts query.as_json
+      #     # query.present? || next
+      #     # municipality.zone = query.postal_code
+      #     # puts municipality.zone
+      #     # municipality.save #.update(name: query.city)
+      # }
+    }
+  end
+
   # def self.list_all
   #
   #   @states = State.all
