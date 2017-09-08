@@ -37,8 +37,8 @@ class State < ApplicationRecord
   # end
 
   def self.seed_municipalities
-      # last_record = Municipality.order('created_at DESC').first.state['id'].to_i + 1
-      last_record = 1
+      last_record = Municipality.order('created_at DESC').first.state['id'].to_i + 1
+      # last_record = 1
       @states = State.where(:id => last_record..51)
       base_uri = "https://waterservices.usgs.gov/nwis/iv/?format=json&siteStatus=active&siteType=ST&stateCd="
 

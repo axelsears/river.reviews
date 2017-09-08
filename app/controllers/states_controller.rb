@@ -5,10 +5,10 @@ class StatesController < ApplicationController
     render json: @states
   end
 
-  def show
-    @state = State.find_by_abbreviation(params[:abbreviation].upcase)
-    render json: @state
-  end
+  # def show
+  #   @state = State.find_by_abbreviation(params[:abbreviation].upcase)
+  #   render json: @state
+  # end
 
   # def new
   #   @states = State.new
