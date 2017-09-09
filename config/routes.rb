@@ -10,6 +10,9 @@ Rails.application.routes.draw do
    get 'state/:state_abbreviation', to: 'municipalities#index'
    get 'state/:state_abbreviation/:zone', to: 'municipalities#show'
 
+  #  get 'state/:state_abbreviation/waterways', to: 'waterways#show_all'
+   get 'state/:state_abbreviation/:zone/waterways', to: 'waterways#index'
+
   #  get 'waterways/:state', to: 'waterways#index'
 
    root to: 'states#index'

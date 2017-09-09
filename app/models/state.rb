@@ -108,9 +108,12 @@ class State < ApplicationRecord
 
         json = JSON.parse(HTTParty.get("#{base_uri}#{state.abbreviation.downcase}").body)['value']['timeSeries']
 
-        json.uniq{|u| u['sourceInfo']['siteCode'][0]['value']}.map { |x|
+        json.uniq{|u| u['sourceInfo']['siteCode'][0]['value']}.each { |x|
+
+          next unless Waterway.find_by_site_id(x['sourceInfo']['siteCode'][0]['value']).nil?
 
           site_id = x['sourceInfo']['siteCode'][0]['value']
+          site_name = x['sourceInfo']['siteName']
           latitude = x['sourceInfo']['geoLocation']['geogLocation']['latitude']
           longitude = x['sourceInfo']['geoLocation']['geogLocation']['longitude']
 
@@ -124,7 +127,7 @@ class State < ApplicationRecord
 
           if zone.nil? && name.nil?
             open('myfile.out', 'a') { |f|
-              f.puts site_id
+              f.puts "#{site_id} | Skipping "
             }
             next
           end
@@ -132,11 +135,29 @@ class State < ApplicationRecord
           name ||= "#{zone}".to_region(:city => true) if name.nil?
           zone ||= "#{name}, #{state.abbreviation}".to_zip.first if zone.nil?
 
-          municipality = state.municipalities.where(name: name, zone: zone)
+          municipality = state.municipalities.where(zone: zone, name: name).first
+          # municipality = state.municipalities.find_all_by_name_and_zone(name, zone)
+          # puts municipality.inspect
+          if municipality.nil?
+            open('myfile.out', 'a') { |f|
+              f.puts "#{site_id} | No match for #{site_name}\n#{municipality.as_json}"
+            }
+            next
+          else
+            waterway = municipality.waterways.new({
+                site_id: site_id,
+                name: site_name,
+                latitude: latitude,
+                longitude: longitude
+            })
+            # waterway.site_id = site_id
+            # waterway.name = site_name
+            # waterway.latitude = latitude
+            # waterway.longitude = longitude
+            # next
+            waterway.save!
+          end
 
-          puts 'skipping' if municipality.nil?
-
-          puts municipality.as_json
 
           # unless municipalities.any? {|matching| matching[:zone] == zone && matching[:name] == name }
           #   municipalities.push(municipality)

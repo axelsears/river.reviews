@@ -5,10 +5,10 @@ class Waterway < ApplicationRecord
   include HTTParty
 
   belongs_to :municipality
-  belongs_to :state
+  belongs_to :state, required: false
 
-  reverse_geocoded_by :latitude, :longitude
-  after_validation :reverse_geocode  # auto-fetch address
+  # reverse_geocoded_by :latitude, :longitude
+  # after_validation :reverse_geocode  # auto-fetch address
 
   # def self.all(state)
   #   # query = Geocoder.search("44.981667,-93.27833").first
