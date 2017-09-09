@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170905125925) do
+ActiveRecord::Schema.define(version: 20170909145011) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -21,6 +21,8 @@ ActiveRecord::Schema.define(version: 20170905125925) do
     t.string "zone"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "latitude"
+    t.decimal "longitude"
     t.index ["state_id"], name: "index_municipalities_on_state_id"
   end
 
@@ -43,8 +45,8 @@ ActiveRecord::Schema.define(version: 20170905125925) do
     t.string "name"
     t.string "site_id"
     t.bigint "municipality_id"
-    t.decimal "latitude"
-    t.decimal "longitude"
+    t.string "latitude"
+    t.string "longitude"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["municipality_id"], name: "index_waterways_on_municipality_id"

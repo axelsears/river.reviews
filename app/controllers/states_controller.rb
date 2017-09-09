@@ -26,6 +26,6 @@ class StatesController < ApplicationController
   private
 
   def place_params
-    params.require(:state).permit(:abbreviation, :name, municipalities_attributes: [:name, :zone], waterways_attributes: [:name, :site_id, :latitude, :longitude])
+    params.require(:state).permit(:abbreviation, :name, municipalities_attributes: [:name, :zone, :latitude, :longitude], waterways_attributes: [:name, :site_id, :latitude, :longitude])
   end
 end

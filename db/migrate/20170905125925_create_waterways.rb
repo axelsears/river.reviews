@@ -4,8 +4,8 @@ class CreateWaterways < ActiveRecord::Migration[5.1]
       t.string :name
       t.string :site_id, unique: true
       t.belongs_to :municipality, foreign_key: true
-      t.decimal :latitude
-      t.decimal :longitude
+      t.string :latitude
+      t.string :longitude
 
       t.timestamps
     end

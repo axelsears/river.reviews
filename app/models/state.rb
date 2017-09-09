@@ -36,6 +36,28 @@ class State < ApplicationRecord
   #   }
   # end
 
+  def self.update_municipalities
+    @states = State.all
+    @states.each do |state|
+      municipalities = state.municipalities.where(latitude:nil)
+      next if municipalities.count == 0
+      municipalities.each do |municipality|
+        Geocoder.search(municipality.zone).each{|x|
+          next unless municipality.latitude.nil?
+          municipality.latitude ||= x.latitude
+          municipality.longitude ||= x.longitude
+        }
+        if municipality.latitude.nil?
+          open('myfile.out', 'a') { |f|
+            f.puts "Skipping #{municipality.name}, #{state.abbreviation}, #{municipality.zone}\n"
+          }
+        else
+          municipality.save
+        end
+      end
+    end
+  end
+
   def self.repair_municipalities
     @states = State.all
     @states.each do |state|
@@ -101,22 +123,25 @@ class State < ApplicationRecord
           }
 
           if zone.nil? && name.nil?
-            puts "Skipping #{site_id}"
+            open('myfile.out', 'a') { |f|
+              f.puts site_id
+            }
             next
           end
 
           name ||= "#{zone}".to_region(:city => true) if name.nil?
           zone ||= "#{name}, #{state.abbreviation}".to_zip.first if zone.nil?
 
-          municipality = state.municipalities.new({
-              name: name,
-              zone: zone
-          })
+          municipality = state.municipalities.where(name: name, zone: zone)
 
-          unless municipalities.any? {|matching| matching[:zone] == zone && matching[:name] == name }
-            municipalities.push(municipality)
-            municipality.save
-          end
+          puts 'skipping' if municipality.nil?
+
+          puts municipality.as_json
+
+          # unless municipalities.any? {|matching| matching[:zone] == zone && matching[:name] == name }
+          #   municipalities.push(municipality)
+          #   municipality.save
+          # end
 
         }
 
