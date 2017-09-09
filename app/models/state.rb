@@ -36,11 +36,45 @@ class State < ApplicationRecord
   #   }
   # end
 
+  def self.repair_municipalities
+    @states = State.all
+    @states.each do |state|
+      municipalities = state.municipalities.where(name:nil)
+      municipalities.each do |municipality|
+
+        Geocoder.search(municipality.zone).each{|m|
+          municipality.name ||= m.city if municipality.name.nil?
+        }
+
+        # puts municipality.as_json unless municipality.name.nil?
+        # coords = nil
+        # Geocoder.search("#{municipality.name}, #{state.abbreviation}").each{|m|
+        #   # municipality.zone ||= m.postal_code
+        #   # temp_name ||= m.address
+        #   coords ||= m.coordinates if coords.nil?
+        #   # puts "#{m.coordinates.to_s.to_region(:city => true)}\n"
+        # }
+        #
+        # Geocoder.search(coords).each{|m|
+        #   municipality.zone ||= m.postal_code if municipality.zone.nil?
+        # }
+
+        municipality.save
+
+        open('myfile.out', 'w') { |f|
+          f.puts "#{Municipality.where(name: nil).count}"
+          f.puts " "
+        }
+
+      end
+    end
+  end
+
   def self.seed_municipalities
-      last_record = Municipality.order('created_at DESC').first.state['id'].to_i + 1
+      # last_record = Municipality.order('created_at DESC').first.state['id'].to_i + 1
       # last_record = 1
-      @states = State.where(:id => 22..23)
-      # @states = State.all
+      # @states = State.where(:id => 22..23)
+      @states = State.all
       base_uri = "https://waterservices.usgs.gov/nwis/iv/?format=json&siteStatus=active&siteType=ST&stateCd="
 
       @states.each do |state|
