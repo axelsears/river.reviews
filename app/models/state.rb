@@ -36,6 +36,151 @@ class State < ApplicationRecord
   #   }
   # end
 
+  def self.troublemakers
+    base_uri = 'https://waterservices.usgs.gov/nwis/iv/?format=json&parameterCd=00060,00065,00055,00004,00061&siteStatus=active&sites='
+    File.readlines('skipped_sites.txt').each do |site_id|
+      # site_id = site_id.split('\n').first.to_s
+      site_id = site_id.strip
+      puts site_id
+      next unless Waterway.where(site_id: site_id).count == 0
+      json = JSON.parse(HTTParty.get("#{base_uri}#{site_id}").body)['value']['timeSeries']
+      json.map{|x|
+        site_name = x['sourceInfo']['siteName']
+        latitude = x['sourceInfo']['geoLocation']['geogLocation']['latitude']
+        longitude = x['sourceInfo']['geoLocation']['geogLocation']['longitude']
+        next if site_name.include?("ONTARIO")
+        next if site_name.include?("INTERNATIONAL BOUNDARY")
+        next if site_name.include?("Dam Lower Pool")
+        next if site_name.include?("Damsite Reading")
+
+        name_formatted = site_name.split.last(3).join(" ").remove('at ','NR ', 'NEAR ', 'AT ', 'near ', 'nr ', ' (CORPS)', '(lower) ', ',', '.').sub("FLA", "FL").sub("FLMINGO", "Flamingo").sub("Atchafalaya Bay", "Atchafalaya Bay LA")
+        state_abbreviation = nil
+        Geocoder.search(name_formatted).each do |query|
+          # puts query.as_json
+          state_abbreviation ||= query.state_code
+          # next unless zone.nil?
+          # zone ||= query.postal_code
+        end
+
+        puts
+
+        name_formatted += " #{state_abbreviation}" unless "#{name_formatted.split.last}" == "#{state_abbreviation}"
+        zone = nil
+        city = nil
+        Geocoder.search(name_formatted).each do |query|
+          # puts query.as_json
+          # state_abbreviation ||= query.state_code
+          # next unless zone.nil?
+          zone ||= query.postal_code
+          city ||= query.city
+          # puts query.city
+          # puts query.postal_code
+        end
+
+        city ||= name_formatted.sub("#{name_formatted.split.last}", "")
+
+        # puts city
+
+        state = State.find_by_abbreviation(state_abbreviation)
+        if zone.nil?
+          zone ||= "#{city}, #{state_abbreviation}".to_zip unless city.nil?
+        end
+
+        municipality = state.municipalities.find_by_zone(zone)
+        unless municipality.nil?
+          waterway = municipality.waterways.new
+          waterway.name = site_name
+          waterway.site_id = site_id
+          waterway.latitude = latitude
+          waterway.longitude = longitude
+          waterway.save
+        end
+        # puts zone
+        sleep 1
+      }
+    end
+  end
+
+  def self.skipped_sites
+    sites = Array.new
+    base_uri = 'https://waterservices.usgs.gov/nwis/iv/?format=json&parameterCd=00060,00065,00055,00004,00061&siteStatus=active&sites='
+    File.readlines('myfile.out').each do |line|
+
+      site_id = line.split(' |').first
+      next unless Waterway.where(site_id: site_id).count == 0
+      # puts sites.as_json
+
+      open('skipped_sites.txt', 'a') { |f|
+        f.puts site_id
+      }
+
+        json = JSON.parse(HTTParty.get("#{base_uri}#{site_id}").body)['value']['timeSeries']
+        json.each do |x|
+          next if sites.any?{|s| s == site_id} || x['sourceInfo']['geoLocation']['geogLocation']['latitude'] == 0.0
+          sites.push(x['sourceInfo']['siteCode'][0]['value'])
+
+
+
+          # site_id = x['sourceInfo']['siteCode'][0]['value']
+          site_name = x['sourceInfo']['siteName']
+          latitude = x['sourceInfo']['geoLocation']['geogLocation']['latitude']
+          longitude = x['sourceInfo']['geoLocation']['geogLocation']['longitude']
+
+          state_abbreviation = nil
+          zone = nil
+          Geocoder.search([latitude,longitude]).each do |query|
+            state_abbreviation ||= query.state
+            next unless zone.nil?
+            zone ||= query.postal_code
+          end
+          # puts zone
+          municipality = Municipality.where(zone: zone)
+          next if municipality.count == 0
+          puts "#{municipality.first.name}\n#{site_name}\n\n\n"
+          waterway = municipality.first.waterways.new
+          waterway.name = site_name
+          waterway.site_id = site_id
+          waterway.latitude = latitude
+          waterway.longitude = longitude
+
+          waterway.save
+          sleep 1
+          # puts state_abbreviation
+          # state = State.find_by_abbreviation(state_abbreviation)
+          # puts state.municipalities.where(zone: zone).count
+          # if zone.nil?
+          #   municipality = state.municipalities.near([latitude,longitude])
+          #   next if municipality.nil? || municipality.first.blank?
+          #   municipality = municipality.first
+          #   puts "#{site_name}\n had no zone"
+          # else
+          #   municipality = state.municipalities.find_by_zone(zone)
+          #   puts "#{site_name}\n had a zone #{zone}"
+          # end
+          #
+          #
+          # next if municipality.nil?
+          #
+          #
+          # puts municipality.as_json
+          # waterway = municipality.waterways.new
+          # waterway.name = site_name
+          # waterway.latitude = latitude
+          # waterway.longitude = longitude
+          # waterway.site_id = site_id
+          #
+          # puts waterway.as_json
+          # state = State.find_by_a?bbreviation(state_abbreviation.upcase)
+          # puts "\n\n#{site_id} #{site_name}"
+          # state.municipalities.near([latitude,longitude]).as_json
+
+        end
+
+    end
+    puts sites.count
+
+  end
+
   def self.update_municipalities
     @states = State.all
     @states.each do |state|
